@@ -2,17 +2,16 @@ import { useState, useRef, useEffect } from 'react'
 import { Search, X, ArrowUpRight, Layers } from 'lucide-react'
 
 /**
- * Buscador global "Deep Search" — busca directamente en enlaces (nivel 3)
+ * Buscador global — busca en enlaces (nivel 3).
  * Props:
  *   allEnlaces - array plano de { id, titulo, url, categoria: { titulo, area: { nombre } } }
  */
 export default function SearchBar({ allEnlaces = [] }) {
-  const [query, setQuery]       = useState('')
-  const [open, setOpen]         = useState(false)
-  const inputRef                = useRef(null)
-  const wrapRef                 = useRef(null)
+  const [query, setQuery] = useState('')
+  const [open,  setOpen]  = useState(false)
+  const inputRef = useRef(null)
+  const wrapRef  = useRef(null)
 
-  // Filtrado
   const results = query.trim().length < 2
     ? []
     : allEnlaces.filter(e =>
@@ -20,18 +19,14 @@ export default function SearchBar({ allEnlaces = [] }) {
         e.categoria?.titulo?.toLowerCase().includes(query.toLowerCase())
       ).slice(0, 8)
 
-  // Cerrar al hacer clic fuera
   useEffect(() => {
     function handleOutside(e) {
-      if (wrapRef.current && !wrapRef.current.contains(e.target)) {
-        setOpen(false)
-      }
+      if (wrapRef.current && !wrapRef.current.contains(e.target)) setOpen(false)
     }
     document.addEventListener('mousedown', handleOutside)
     return () => document.removeEventListener('mousedown', handleOutside)
   }, [])
 
-  // Tecla Escape
   useEffect(() => {
     function handleEsc(e) {
       if (e.key === 'Escape') { setOpen(false); inputRef.current?.blur() }
@@ -88,7 +83,6 @@ export default function SearchBar({ allEnlaces = [] }) {
         )}
       </div>
 
-      {/* Dropdown de resultados */}
       {open && query.trim().length >= 2 && (
         <div className="search-dropdown">
           {results.length === 0 ? (
@@ -101,11 +95,7 @@ export default function SearchBar({ allEnlaces = [] }) {
                 {results.length} resultado{results.length !== 1 ? 's' : ''}
               </div>
               {results.map(e => (
-                <div
-                  key={e.id}
-                  className="search-result-item"
-                  onClick={() => handleSelect(e.url)}
-                >
+                <div key={e.id} className="search-result-item" onClick={() => handleSelect(e.url)}>
                   <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 32, height: 32, borderRadius: '.5rem', background: '#dbeafe', flexShrink: 0 }}>
                     <ArrowUpRight size={15} color="#2563eb" />
                   </span>

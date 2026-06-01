@@ -1,39 +1,27 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import Modal from '../ui/Modal'
 import { useAuth } from '../../contexts/AuthContext'
 import { supabase } from '../../supabaseClient'
-import { Upload, ImageIcon, Type } from 'lucide-react'
 import * as LucideIcons from 'lucide-react'
-
-const LUCIDE_SUGGESTIONS = [
-  'Link', 'Car', 'ShoppingCart', 'Users', 'BarChart2', 'FileText',
-  'Settings', 'Monitor', 'Headphones', 'BookOpen', 'Briefcase',
-  'Building2', 'CreditCard', 'Database', 'Globe', 'Home', 'Mail',
-  'Package', 'Phone', 'Printer', 'Shield', 'Star', 'Truck', 'Wrench',
-]
+import { Search, Check } from 'lucide-react'
+import { ICON_CATALOG } from './iconCatalog'
 
 export default function CategoriaForm({ isOpen, onClose, areaId, initialData, onRefresh }) {
   const { toast } = useAuth()
   const isEdit = !!initialData
-  const fileRef = useRef(null)
 
-  const [titulo, setTitulo]           = useState('')
+  const [titulo,      setTitulo]      = useState('')
   const [descripcion, setDescripcion] = useState('')
-  const [tipoIcono, setTipoIcono]     = useState('lucide')
-  const [valorIcono, setValorIcono]   = useState('Link')
-  const [file, setFile]               = useState(null)
-  const [preview, setPreview]         = useState(null)
-  const [uploading, setUploading]     = useState(false)
-  const [saving, setSaving]           = useState(false)
+  const [valorIcono,  setValorIcono]  = useState('Link')
+  const [iconSearch,  setIconSearch]  = useState('')
+  const [saving,      setSaving]      = useState(false)
 
   useEffect(() => {
     if (isOpen && initialData) {
       setTitulo(initialData.titulo ?? '')
       setDescripcion(initialData.descripcion ?? '')
-      setTipoIcono(initialData.tipo_icono ?? 'lucide')
       setValorIcono(initialData.valor_icono ?? 'Link')
-      setFile(null)
-      setPreview(initialData.tipo_icono === 'imagen' ? initialData.valor_icono : null)
+      setIconSearch('')
     } else if (!isOpen) {
       resetForm()
     }
@@ -42,61 +30,31 @@ export default function CategoriaForm({ isOpen, onClose, areaId, initialData, on
   function resetForm() {
     setTitulo('')
     setDescripcion('')
-    setTipoIcono('lucide')
     setValorIcono('Link')
-    setFile(null)
-    setPreview(null)
+    setIconSearch('')
   }
 
-  function handleFileChange(e) {
-    const f = e.target.files?.[0]
-    if (!f) return
-    setFile(f)
-    setPreview(URL.createObjectURL(f))
-  }
-
-  async function uploadImage() {
-    if (!file) return valorIcono // ya tiene URL existente
-
-    setUploading(true)
-    const ext = file.name.split('.').pop()
-    const filename = `${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`
-
-    const { error: uploadError } = await supabase.storage
-      .from('iconos')
-      .upload(filename, file, { upsert: false })
-
-    if (uploadError) {
-      setUploading(false)
-      throw new Error('Error al subir imagen: ' + uploadError.message)
-    }
-
-    const { data: urlData } = supabase.storage
-      .from('iconos')
-      .getPublicUrl(filename)
-
-    setUploading(false)
-    return urlData.publicUrl
-  }
+  const filteredCatalog = useMemo(() => {
+    if (!iconSearch.trim()) return ICON_CATALOG
+    const q = iconSearch.toLowerCase()
+    return ICON_CATALOG.map(g => ({
+      ...g,
+      icons: g.icons.filter(n => n.toLowerCase().includes(q)),
+    })).filter(g => g.icons.length > 0)
+  }, [iconSearch])
 
   async function handleSubmit(e) {
     e.preventDefault()
     if (!titulo.trim()) return
 
     setSaving(true)
-    let iconUrl = valorIcono
-
     try {
-      if (tipoIcono === 'imagen' && file) {
-        iconUrl = await uploadImage()
-      }
-
       const payload = {
-        area_id: areaId,
-        titulo: titulo.trim(),
+        area_id:     areaId,
+        titulo:      titulo.trim(),
         descripcion: descripcion.trim() || null,
-        tipo_icono: tipoIcono,
-        valor_icono: tipoIcono === 'lucide' ? valorIcono : iconUrl,
+        tipo_icono:  'lucide',
+        valor_icono: valorIcono,
       }
 
       let error
@@ -118,8 +76,7 @@ export default function CategoriaForm({ isOpen, onClose, areaId, initialData, on
     }
   }
 
-  // Preview del ícono Lucide seleccionado
-  const IconPreview = LucideIcons[valorIcono] ?? null
+  const PreviewIcon = LucideIcons[valorIcono] ?? LucideIcons['Link']
 
   return (
     <Modal
@@ -142,126 +99,93 @@ export default function CategoriaForm({ isOpen, onClose, areaId, initialData, on
             onChange={e => setDescripcion(e.target.value)} placeholder="Descripción breve..." rows={2} />
         </div>
 
-        {/* Selector de tipo de ícono */}
+        {/* ── Selector de ícono ───────────────── */}
         <div>
-          <label className="form-label">Tipo de Ícono</label>
-          <div style={{ display: 'flex', gap: '.75rem' }}>
-            {[
-              { value: 'lucide', label: 'Ícono Lucide', Icon: Type },
-              { value: 'imagen', label: 'Imagen (PNG/JPG)', Icon: ImageIcon },
-            ].map(({ value, label, Icon }) => (
-              <label
-                key={value}
-                style={{
-                  flex: 1,
-                  display: 'flex', alignItems: 'center', gap: '.5rem',
-                  padding: '.55rem .85rem',
-                  border: `1.5px solid ${tipoIcono === value ? '#2563eb' : '#e2e8f0'}`,
-                  borderRadius: '.625rem',
-                  cursor: 'pointer',
-                  background: tipoIcono === value ? '#eff6ff' : '#fff',
-                  transition: 'all .15s',
-                  fontSize: '.825rem',
-                  fontWeight: 500,
-                  color: tipoIcono === value ? '#2563eb' : '#64748b',
-                }}
-              >
-                <input
-                  type="radio" name="tipo_icono" value={value}
-                  checked={tipoIcono === value}
-                  onChange={() => setTipoIcono(value)}
-                  style={{ display: 'none' }}
-                />
-                <Icon size={14} />
-                {label}
-              </label>
-            ))}
-          </div>
-        </div>
+          <label className="form-label">Ícono</label>
 
-        {/* Campo según tipo de ícono */}
-        {tipoIcono === 'lucide' ? (
-          <div>
-            <label className="form-label">Nombre del ícono Lucide</label>
-            <div style={{ display: 'flex', gap: '.5rem', alignItems: 'center' }}>
-              <input
-                className="form-input"
-                type="text"
-                value={valorIcono}
-                onChange={e => setValorIcono(e.target.value)}
-                placeholder="Ej: Car, Users, FileText..."
-                style={{ flex: 1 }}
-              />
-              {IconPreview && (
-                <div style={{
-                  width: 44, height: 44, borderRadius: '.625rem',
-                  background: '#dbeafe', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  flexShrink: 0,
-                }}>
-                  <IconPreview size={22} color="#2563eb" />
-                </div>
-              )}
-            </div>
-            {/* Sugerencias */}
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '.3rem', marginTop: '.5rem' }}>
-              {LUCIDE_SUGGESTIONS.map(name => (
-                <button
-                  key={name}
-                  type="button"
-                  onClick={() => setValorIcono(name)}
-                  style={{
-                    padding: '.2rem .55rem',
-                    borderRadius: '.375rem',
-                    border: `1px solid ${valorIcono === name ? '#2563eb' : '#e2e8f0'}`,
-                    background: valorIcono === name ? '#dbeafe' : '#f8fafc',
-                    color: valorIcono === name ? '#2563eb' : '#64748b',
-                    fontSize: '.72rem',
-                    fontWeight: 500,
-                    cursor: 'pointer',
-                  }}
-                >
-                  {name}
-                </button>
-              ))}
-            </div>
+          {/* Buscador */}
+          <div style={{ position: 'relative', marginBottom: '.65rem' }}>
+            <Search size={14} style={{ position: 'absolute', left: '.75rem', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8', pointerEvents: 'none' }} />
+            <input
+              className="form-input"
+              type="text"
+              value={iconSearch}
+              onChange={e => setIconSearch(e.target.value)}
+              placeholder="Buscar ícono... (Car, Users, FileText...)"
+              style={{ paddingLeft: '2.25rem' }}
+            />
           </div>
-        ) : (
-          <div>
-            <label className="form-label">Imagen del ícono</label>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-              {preview && (
-                <img src={preview} alt="Preview" className="upload-preview" />
-              )}
-              <button
-                type="button"
-                className="btn-ghost"
-                onClick={() => fileRef.current?.click()}
-                style={{ display: 'flex', alignItems: 'center', gap: '.5rem' }}
-              >
-                <Upload size={14} />
-                {file ? 'Cambiar imagen' : 'Seleccionar imagen'}
-              </button>
-              <input
-                ref={fileRef}
-                type="file"
-                accept="image/jpeg,image/png,image/webp"
-                onChange={handleFileChange}
-                style={{ display: 'none' }}
-              />
-            </div>
-            {file && (
-              <p style={{ fontSize: '.75rem', color: '#94a3b8', marginTop: '.4rem' }}>
-                {file.name} ({(file.size / 1024).toFixed(0)} KB)
+
+          {/* Banner del ícono seleccionado */}
+          {valorIcono && (() => {
+            const Ic = LucideIcons[valorIcono]
+            return Ic ? (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '.75rem', padding: '.6rem .9rem', background: '#eff6ff', borderRadius: '.625rem', border: '1.5px solid #bfdbfe', marginBottom: '.65rem' }}>
+                <div style={{ width: 34, height: 34, borderRadius: '.5rem', background: '#dbeafe', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <Ic size={18} color="#2563eb" strokeWidth={1.75} />
+                </div>
+                <span style={{ fontWeight: 600, fontSize: '.825rem', color: '#1e40af' }}>
+                  Seleccionado: <code style={{ background: '#dbeafe', padding: '.1rem .4rem', borderRadius: '.25rem' }}>{valorIcono}</code>
+                </span>
+              </div>
+            ) : null
+          })()}
+
+          {/* Grilla por categorías */}
+          <div style={{ maxHeight: 220, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '.9rem' }}>
+            {filteredCatalog.map(group => (
+              <div key={group.group}>
+                <div style={{ fontSize: '.62rem', fontWeight: 700, color: '#94a3b8', letterSpacing: '.06em', textTransform: 'uppercase', marginBottom: '.4rem' }}>
+                  {group.group}
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(52px, 1fr))', gap: '.3rem' }}>
+                  {group.icons.map(name => {
+                    const Ic = LucideIcons[name]
+                    if (!Ic) return null
+                    const isActive = valorIcono === name
+                    return (
+                      <button
+                        key={name}
+                        type="button"
+                        title={name}
+                        onClick={() => setValorIcono(name)}
+                        style={{
+                          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                          gap: '.2rem', padding: '.45rem .2rem',
+                          borderRadius: '.5rem', border: `1.5px solid ${isActive ? '#2563eb' : '#e2e8f0'}`,
+                          background: isActive ? '#dbeafe' : '#f8fafc',
+                          cursor: 'pointer', transition: 'all .12s', position: 'relative',
+                        }}
+                        onMouseEnter={e => { if (!isActive) e.currentTarget.style.background = '#f0f7ff' }}
+                        onMouseLeave={e => { if (!isActive) e.currentTarget.style.background = '#f8fafc' }}
+                      >
+                        <Ic size={18} color={isActive ? '#2563eb' : '#475569'} strokeWidth={1.75} />
+                        <span style={{ fontSize: '.5rem', color: isActive ? '#2563eb' : '#94a3b8', textAlign: 'center', lineHeight: 1.2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', width: '100%' }}>
+                          {name}
+                        </span>
+                        {isActive && (
+                          <span style={{ position: 'absolute', top: 2, right: 2, width: 12, height: 12, background: '#2563eb', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <Check size={8} color="#fff" strokeWidth={3} />
+                          </span>
+                        )}
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+            ))}
+            {filteredCatalog.length === 0 && (
+              <p style={{ textAlign: 'center', color: '#94a3b8', padding: '1.5rem 0', fontSize: '.8rem', margin: 0 }}>
+                Sin resultados para "{iconSearch}"
               </p>
             )}
           </div>
-        )}
-
+        </div>
 
         <div style={{ display: 'flex', gap: '.75rem', justifyContent: 'flex-end', paddingTop: '.5rem' }}>
-          <button type="button" className="btn-ghost" onClick={onClose} disabled={saving || uploading}>Cancelar</button>
-          <button type="submit" className="btn-primary" disabled={saving || uploading}>
-            {uploading ? 'Subiendo imagen...' : saving ? 'Guardando...' : isEdit ? 'Guardar cambios' : 'Crear Categoría'}
+          <button type="button" className="btn-ghost" onClick={onClose} disabled={saving}>Cancelar</button>
+          <button type="submit" className="btn-primary" disabled={saving}>
+            {saving ? 'Guardando...' : isEdit ? 'Guardar cambios' : 'Crear Categoría'}
           </button>
         </div>
       </form>

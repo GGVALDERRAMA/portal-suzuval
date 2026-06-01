@@ -512,11 +512,3 @@ textarea.form-input { resize: vertical; min-height: 80px; }
   gap: 1rem;
 }
 
-/* ── Upload preview ────────────────────────────────── */
-.upload-preview {
-  width: 56px;
-  height: 56px;
-  border-radius: .625rem;
-  object-fit: cover;
-  border: 2px solid var(--color-border);
-}

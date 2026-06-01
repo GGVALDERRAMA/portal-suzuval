@@ -1,20 +1,18 @@
 import { useState } from 'react'
-import { Pencil, Trash2, ImagePlus, GripVertical } from 'lucide-react'
+import { Pencil, Trash2, GripVertical } from 'lucide-react'
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { useAuth } from '../../contexts/AuthContext'
 import CategoriaIcon from '../ui/CategoriaIcon'
 import ConfirmDialog from '../ui/ConfirmDialog'
 import CategoriaForm from '../admin/CategoriaForm'
-import IconPickerModal from '../admin/IconPickerModal'
 import { supabase } from '../../supabaseClient'
 
 export default function CategoriaCard({ categoria, isSelected, onCardClick, onRefresh }) {
   const { isAdmin, toast } = useAuth()
-  const [editOpen,       setEditOpen]       = useState(false)
-  const [confirmOpen,    setConfirmOpen]    = useState(false)
-  const [iconPickerOpen, setIconPickerOpen] = useState(false)
-  const [deleting,       setDeleting]       = useState(false)
+  const [editOpen,    setEditOpen]    = useState(false)
+  const [confirmOpen, setConfirmOpen] = useState(false)
+  const [deleting,    setDeleting]    = useState(false)
 
   // ── Sortable ───────────────────────────────────────────
   const {
@@ -62,7 +60,7 @@ export default function CategoriaCard({ categoria, isSelected, onCardClick, onRe
           onKeyDown={e => e.key === 'Enter' && onCardClick(categoria.id)}
           style={{ display: 'flex', flexDirection: 'column', gap: '.75rem', minHeight: 130, position: 'relative' }}
         >
-          {/* ── Grip handle (DENTRO del cat-card para que el hover funcione) */}
+          {/* ── Grip handle */}
           {isAdmin && (
             <button
               {...attributes}
@@ -78,7 +76,7 @@ export default function CategoriaCard({ categoria, isSelected, onCardClick, onRe
 
           {/* Ícono */}
           <div className="cat-card__icon-wrap" style={isSelected ? { background: '#bfdbfe' } : {}}>
-            <CategoriaIcon tipoIcono={categoria.tipo_icono} valorIcono={categoria.valor_icono} />
+            <CategoriaIcon valorIcono={categoria.valor_icono} />
           </div>
 
           {/* Texto */}
@@ -115,14 +113,6 @@ export default function CategoriaCard({ categoria, isSelected, onCardClick, onRe
             <div className="admin-card-actions" onClick={stopProp}>
               <button
                 className="btn-icon"
-                title="Cambiar ícono"
-                onClick={() => setIconPickerOpen(true)}
-                style={{ background: '#dcfce7', color: '#16a34a' }}
-              >
-                <ImagePlus size={12} />
-              </button>
-              <button
-                className="btn-icon"
                 title="Editar categoría"
                 onClick={() => setEditOpen(true)}
                 style={{ background: '#dbeafe', color: '#2563eb' }}
@@ -142,12 +132,6 @@ export default function CategoriaCard({ categoria, isSelected, onCardClick, onRe
         </div>
       </div>
 
-      <IconPickerModal
-        isOpen={iconPickerOpen}
-        onClose={() => setIconPickerOpen(false)}
-        categoria={categoria}
-        onRefresh={onRefresh}
-      />
       <CategoriaForm
         isOpen={editOpen}
         onClose={() => setEditOpen(false)}

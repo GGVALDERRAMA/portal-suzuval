@@ -17,25 +17,16 @@ import {
 import { useAuth } from '../../contexts/AuthContext'
 import ConfirmDialog from '../ui/ConfirmDialog'
 import EnlaceForm from '../admin/EnlaceForm'
-import ContactPopover from '../ui/ContactPopover'
 import SortableLinkCard from './SortableLinkCard'
 import { supabase } from '../../supabaseClient'
 
-/**
- * Panel inline que aparece debajo del grid de categorías
- * al seleccionar una tarjeta. Muestra los enlaces como sub-tarjetas
- * con soporte de drag-and-drop para reordenar (solo admin).
- */
 export default function LinksPanel({ categoria, onRefresh, onClose }) {
   const { isAdmin, toast } = useAuth()
-  const [addOpen,      setAddOpen]      = useState(false)
-  const [editTarget,   setEditTarget]   = useState(null)
-  const [delTarget,    setDelTarget]    = useState(null)
-  const [deleting,     setDeleting]     = useState(false)
-  const [openContact,  setOpenContact]  = useState(null)
-  const [activeId,     setActiveId]     = useState(null)
-
-  // ── Estado local ordenado (optimistic) ──────────────────
+  const [addOpen,    setAddOpen]    = useState(false)
+  const [editTarget, setEditTarget] = useState(null)
+  const [delTarget,  setDelTarget]  = useState(null)
+  const [deleting,   setDeleting]   = useState(false)
+  const [activeId,   setActiveId]   = useState(null)
   const [localLinks, setLocalLinks] = useState([])
 
   useEffect(() => {
@@ -43,27 +34,19 @@ export default function LinksPanel({ categoria, onRefresh, onClose }) {
     setLocalLinks(sorted)
   }, [categoria])
 
-  // ── Sensores DnD ────────────────────────────────────────
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
     useSensor(TouchSensor,   { activationConstraint: { delay: 200, tolerance: 6 } }),
   )
 
-  function handleDragStart(event) {
-    setActiveId(event.active.id)
-  }
-
   async function handleDragEnd(event) {
     setActiveId(null)
     const { active, over } = event
     if (!over || active.id === over.id) return
-
     const oldIdx = localLinks.findIndex(l => l.id === active.id)
     const newIdx = localLinks.findIndex(l => l.id === over.id)
     const reordered = arrayMove(localLinks, oldIdx, newIdx)
-
-    setLocalLinks(reordered) // Optimistic update
-
+    setLocalLinks(reordered)
     try {
       await Promise.all(
         reordered.map((link, idx) =>
@@ -72,7 +55,7 @@ export default function LinksPanel({ categoria, onRefresh, onClose }) {
       )
     } catch {
       toast('Error al guardar el orden', 'error')
-      setLocalLinks(localLinks) // revert
+      setLocalLinks(localLinks)
     }
   }
 
@@ -94,7 +77,7 @@ export default function LinksPanel({ categoria, onRefresh, onClose }) {
   return (
     <>
       <div className="links-panel">
-        {/* Encabezado del panel */}
+        {/* Encabezado */}
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '1rem', gap: '1rem' }}>
           <div>
             <h3 style={{ fontWeight: 700, fontSize: '.95rem', color: '#1e40af', margin: 0, lineHeight: 1.3 }}>
@@ -135,7 +118,7 @@ export default function LinksPanel({ categoria, onRefresh, onClose }) {
           </div>
         </div>
 
-        {/* Grid de sub-links */}
+        {/* Contenido */}
         {localLinks.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '1.75rem 0' }}>
             <div style={{ fontSize: '2.5rem', marginBottom: '.5rem' }}>🔗</div>
@@ -150,7 +133,7 @@ export default function LinksPanel({ categoria, onRefresh, onClose }) {
           <DndContext
             sensors={sensors}
             collisionDetection={closestCenter}
-            onDragStart={handleDragStart}
+            onDragStart={e => setActiveId(e.active.id)}
             onDragEnd={handleDragEnd}
           >
             <SortableContext items={localLinks.map(l => l.id)} strategy={rectSortingStrategy}>
@@ -161,19 +144,11 @@ export default function LinksPanel({ categoria, onRefresh, onClose }) {
                     enlace={enlace}
                     onEdit={setEditTarget}
                     onDelete={setDelTarget}
-                    onContactClick={({ anchor, enlace: e }) => {
-                      const email = (e.url ?? '').replace(/^mailto:/i, '')
-                      setOpenContact({
-                        anchor,
-                        contact: { nombre: e.contacto_nombre, email, telefono: e.contacto_telefono },
-                      })
-                    }}
                   />
                 ))}
               </div>
             </SortableContext>
 
-            {/* Overlay mientras arrastra */}
             <DragOverlay>
               {activeLink && (
                 <div className="link-sub-card" style={{ boxShadow: '0 8px 24px rgba(37,99,235,.25)', opacity: 1, cursor: 'grabbing' }}>
@@ -188,40 +163,9 @@ export default function LinksPanel({ categoria, onRefresh, onClose }) {
         )}
       </div>
 
-      {/* Formulario agregar */}
-      <EnlaceForm
-        isOpen={addOpen}
-        onClose={() => setAddOpen(false)}
-        categoriaId={categoria.id}
-        onRefresh={onRefresh}
-      />
-
-      {/* Formulario editar */}
-      <EnlaceForm
-        isOpen={!!editTarget}
-        onClose={() => setEditTarget(null)}
-        categoriaId={categoria.id}
-        initialData={editTarget}
-        onRefresh={onRefresh}
-      />
-
-      {/* Confirmación eliminar */}
-      <ConfirmDialog
-        isOpen={!!delTarget}
-        onClose={() => setDelTarget(null)}
-        onConfirm={handleDelete}
-        title={delTarget?.titulo}
-        loading={deleting}
-      />
-
-      {/* Popover de contacto */}
-      {openContact && (
-        <ContactPopover
-          contact={openContact.contact}
-          anchor={openContact.anchor}
-          onClose={() => setOpenContact(null)}
-        />
-      )}
+      <EnlaceForm isOpen={addOpen}       onClose={() => setAddOpen(false)}    categoriaId={categoria.id} onRefresh={onRefresh} />
+      <EnlaceForm isOpen={!!editTarget}  onClose={() => setEditTarget(null)}  categoriaId={categoria.id} initialData={editTarget} onRefresh={onRefresh} />
+      <ConfirmDialog isOpen={!!delTarget} onClose={() => setDelTarget(null)} onConfirm={handleDelete} title={delTarget?.titulo} loading={deleting} />
     </>
   )
 }

@@ -1,4 +1,4 @@
-import { Grid3x3, LogOut, Shield } from 'lucide-react'
+import { Grid3x3, LogOut, Plus } from 'lucide-react'
 import { useAuth } from '../../contexts/AuthContext'
 import SearchBar from '../search/SearchBar'
 
@@ -60,8 +60,8 @@ export default function Header({ allEnlaces, onAddArea }) {
               onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,.22)'}
               onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,.15)'}
             >
-              <Shield size={14} />
-              <span style={{ display: 'none' }} className="sm:inline">Admin</span>
+              <Plus size={14} />
+              Añadir Área
             </button>
           )}
 
