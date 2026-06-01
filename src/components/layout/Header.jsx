@@ -1,4 +1,4 @@
-import { Grid3x3, LogOut, Plus } from 'lucide-react'
+import { LogOut, Plus } from 'lucide-react'
 import { useAuth } from '../../contexts/AuthContext'
 import SearchBar from '../search/SearchBar'
 
@@ -19,11 +19,16 @@ export default function Header({ allEnlaces, onAddArea }) {
         <div style={{ display: 'flex', alignItems: 'center', gap: '.75rem', flexShrink: 0 }}>
           <div style={{
             width: 38, height: 38,
-            background: 'rgba(255,255,255,.15)',
             borderRadius: '.625rem',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            overflow: 'hidden',
+            flexShrink: 0,
+            border: '2px solid rgba(255,255,255,.25)',
           }}>
-            <Grid3x3 size={20} color="#fff" strokeWidth={2} />
+            <img
+              src="/logo-suzuval.png"
+              alt="Logo Suzuval"
+              style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center' }}
+            />
           </div>
           <div>
             <div style={{ color: '#fff', fontWeight: 700, fontSize: '1rem', lineHeight: 1.2 }}>
