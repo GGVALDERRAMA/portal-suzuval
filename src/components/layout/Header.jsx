@@ -18,16 +18,15 @@ export default function Header({ allEnlaces, onAddArea }) {
         {/* Logo + Título */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '.75rem', flexShrink: 0 }}>
           <div style={{
-            width: 38, height: 38,
-            borderRadius: '.625rem',
+            width: 80, height: 36,
+            borderRadius: '.5rem',
             overflow: 'hidden',
             flexShrink: 0,
-            border: '2px solid rgba(255,255,255,.25)',
           }}>
             <img
               src="/logo-suzuval.png"
               alt="Logo Suzuval"
-              style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center' }}
+              style={{ width: '100%', height: '100%', objectFit: 'contain', objectPosition: 'center' }}
             />
           </div>
           <div>
