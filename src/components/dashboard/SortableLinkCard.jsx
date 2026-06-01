@@ -57,7 +57,7 @@ export default function SortableLinkCard({ enlace, onEdit, onDelete }) {
         </span>
 
         <span style={{ flex: 1, minWidth: 0 }}>
-          <span style={{ display: 'block', fontWeight: 600, fontSize: '.855rem', lineHeight: 1.3, color: '#0f172a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+          <span style={{ display: 'block', fontWeight: 600, fontSize: '.855rem', lineHeight: 1.3, color: '#0f172a', wordBreak: 'break-word' }}>
             {enlace.titulo}
           </span>
           {isAdmin && enlace.tipo_desarrollo && (
