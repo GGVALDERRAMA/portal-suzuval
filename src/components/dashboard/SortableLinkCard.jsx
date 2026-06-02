@@ -60,7 +60,7 @@ export default function SortableLinkCard({ enlace, onEdit, onDelete }) {
           <span style={{ display: 'block', fontWeight: 600, fontSize: '.855rem', lineHeight: 1.3, color: '#0f172a', wordBreak: 'break-word' }}>
             {enlace.titulo}
           </span>
-          {isAdmin && enlace.tipo_desarrollo && (
+          {enlace.tipo_desarrollo && (
             <span style={{
               display: 'inline-block', marginTop: '.15rem',
               fontSize: '.65rem', fontWeight: 600,
